@@ -17,15 +17,11 @@ library("mapproj")
 
 ## read data
 # weather map
-weather <- read.csv("WeatherEvents_Jan2016-Dec2020.csv", stringsAsFactors = FALSE)
-weather_data2 <- weather %>%
-  mutate(year_time = (gsub("[^()]*\\/", "", StartTime.UTC.))) %>%
-  mutate(year_two = str_sub(year_time, 1, 2)) %>%
-  mutate(year = paste0("20", year_two))
+weather_data2_raw <- read.csv("https://media.githubusercontent.com/media/VictoriaVVei/Data-Store/main/dataset/weather_data2.csv")
 
 # hurricane
-pacific <- read.csv("https://raw.githubusercontent.com/info-201a-au21/Final-Project/main/dataset/pacific.csv?token=GHSAT0AAAAAAB6RUHXG4MSOK7BGP37UM4RSZAIAVRQ")
-atlantic <- read.csv("https://raw.githubusercontent.com/info-201a-au21/Final-Project/main/dataset/atlantic.csv?token=GHSAT0AAAAAAB6RUHXHFSMCPABYBWN3ERVIZAIAWEQ")
+pacific <- read.csv("https://media.githubusercontent.com/media/VictoriaVVei/Data-Store/main/dataset/pacific.csv")
+atlantic <- read.csv("https://media.githubusercontent.com/media/VictoriaVVei/Data-Store/main/dataset/atlantic.csv")
 pacific <- pacific %>%
   select(ID, Name, Date, Latitude, Longitude, Maximum.Wind)
 atlantic <- atlantic %>%
@@ -71,22 +67,12 @@ colnames(whole_table) <- c(
 )
 
 # severe weather page
-weather_data <- weather %>%
-  select(Type, StartTime.UTC., EndTime.UTC.)
-endT <- strptime(weather_data$EndTime.UTC., ("%m/%d/%Y %H:%M"))
-startT <- strptime(weather_data$StartTime.UTC., ("%m/%d/%Y %H:%M"))
-weather_time_span_data <- weather_data %>%
-  mutate(time_span = as.numeric(difftime(endT, startT, tz = "UTC",
-                                         units = "mins"))) %>%
-  filter(time_span != "NA")
-weather_time_span <- weather_data %>%
-  mutate(time_span = difftime(endT, startT, tz = "UTC", units = "mins")) %>%
-  filter(time_span != "NA") %>%
-  group_by(Type) %>%
-  summarise(mean_time_span = as.numeric(mean(time_span)))
+weather_time_span <- read.csv("")
+
+write.csv(weather_time_span, file = "weather_time_span.csv", row.names = FALSE)
 
 # Table
-earthquake <- read.csv("https://raw.githubusercontent.com/info-201a-au21/Final-Project/4311c5ad91b1ff6c0ac59fb3a843dea03767be71/dataset/database.csv?token=GHSAT0AAAAAAB6RUHXGVYIC5UIYWQEFTDYMZAIBETQ")
+earthquake <- read.csv("https://media.githubusercontent.com/media/VictoriaVVei/Data-Store/main/dataset/database.csv")
 # extract num
 earthquake_num <- earthquake %>%
   mutate(year = as.numeric(gsub("[^()]*\\/", "", Date))) %>%
@@ -124,15 +110,15 @@ merge_disaster <- merge_disaster[36:51, ]
 server <- function(input, output) {
   output$severe_weather_state_map <- renderPlotly({
     # weather plot
-    weather_data_year <- weather_data2 %>%
+    weather_data_year <- weather_data2_raw %>%
       filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
       group_by(State) %>%
       summarise(num = length(Severity))
-
+    
     state_shape <- map_data("state") %>%
       mutate(State = toupper(str_sub(region, 1, 2))) %>%
       left_join(weather_data_year, "State")
-
+    
     blank_theme <- theme_bw() +
       theme(
         axis.line = element_blank(), # remove axis lines
@@ -144,7 +130,7 @@ server <- function(input, output) {
         panel.grid.minor = element_blank(), # remove minor grid lines
         panel.border = element_blank() # remove border around plot
       )
-
+    
     my_plot <- ggplot(state_shape) +
       geom_polygon(
         mapping = aes(x = long, y = lat, group = group, fill = num),
@@ -158,12 +144,12 @@ server <- function(input, output) {
         fill = "Number of Severe Weather"
       ) +
       blank_theme
-
+    
     my_plotly_plot <- ggplotly(my_plot)
-
+    
     return(my_plotly_plot)
   })
-
+  
   # hurricane
   output$hurricane <- renderPlot({
     if (input$y_axis_input == "Atlantic") {
@@ -188,7 +174,7 @@ server <- function(input, output) {
         )
     }
   })
-
+  
   # severe weather
   output$plot <- renderPlot({
     p <- ggplot(
@@ -209,7 +195,8 @@ server <- function(input, output) {
     }
     p
   })
-
+  
   # table
   output$table <- renderTable(merge_disaster)
 }
+
