@@ -1,0 +1,13 @@
+name: final
+title: final
+username:
+account: climatevic
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5344498
+bundleId: 6929092
+url: https://climatevic.shinyapps.io/final/
+when: 1678248921.99984
+lastSyncTime: 1678248921.99984
+asMultiple: FALSE
+asStatic: FALSE
